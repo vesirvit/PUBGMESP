@@ -443,8 +443,8 @@ int main(int argc, const char** argv) {
                     ImGui::Checkbox("Distance", &Config.X.Distance);
                     ImGui::Checkbox("Health", &Config.X.Health);
                     ImGui::Checkbox("Ignore Bots", &Config.X.IgnoreBots);
-            } if (ImGui::CollapsingHeader("子追")) {
-                ImGui::Text("子追");
+            } if (ImGui::CollapsingHeader("自瞄")) {
+                ImGui::Text("自瞄");
                 ImGui::Checkbox("启用", &Config.Aim.Enable);
                 ImGui::SliderFloat("自瞄范围", &Config.Aim.FovSize, 0.0f, 300.0f, "%.f");
                 ImGui::Combo("自瞄部位", &Config.Aim.AimPos, "头\0胸\0腰\0");

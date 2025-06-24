@@ -30,7 +30,7 @@ struct sESP {
     bool IgnoreBots;
 };
 
-struct sBT {
+struct sAim {
     bool Enable;
     float FovSize;
     int AimPos;
@@ -43,7 +43,7 @@ struct sMemory {
 
 struct sConifig {
     sESP X;
-    sBT BT;
+    sAim Aim;
     sMemory MEM;
 } Config{};
 
@@ -250,16 +250,16 @@ void ESPView(ImDrawList* draw) {
                     ImVec2 TextSize = ImGui::CalcTextSize(temp);
                     draw->AddText(InWindow((right + left) / 2 - TextSize.x * 0.5, BOTTOM), ImColor(255, 255, 255), temp);
                 }
-            } if (Config.BT.Enable) {
-                if (ScrDistance < Config.BT.FovSize) {
+            } if (Config.Aim.Enable) {
+                if (ScrDistance < Config.Aim.FovSize) {
                     if (ScrDistance < OldW) {
                         OldW = ScrDistance;
                         Target = ObjAddr;
-                        if (Config.BT.AimPos == 0) {
+                        if (Config.Aim.AimPos == 0) {
                             TargetPos = relLocation1;
-                        } else if (Config.BT.AimPos == 1) {
+                        } else if (Config.Aim.AimPos == 1) {
                             TargetPos = relLocation2;
-                        } else if (Config.BT.AimPos == 2) {
+                        } else if (Config.Aim.AimPos == 2) {
                             TargetPos = relLocation3;
                         }
                     }
@@ -273,7 +273,7 @@ void ESPView(ImDrawList* draw) {
         draw->AddRectFilled(InWindow(px - TextSize.x * 0.7, 90 - TextSize.y * 0.5), InWindow(px + TextSize.x * 0.7, 90 + TextSize.y * 1.3), ImColor(255, 255, 10, 110), 12);
         draw->AddRect(InWindow(px - TextSize.x * 0.7, 90 - TextSize.y * 0.5), InWindow(px + TextSize.x * 0.7, 90 + TextSize.y * 1.2), ImColor(255, 255, 0, 190), 12, 0, 2.5f);
         draw->AddText(InWindow(px - TextSize.x * 0.5, 90), ImColor(255, 255, 255), temp);
-    } if (Config.BT.Enable) {
+    } if (Config.Aim.Enable) {
         if (Target) {
             UINT64 CameraAddr = GetPtr(GetPtr(GetPtr(libbase + 0x410E20) + 0x20) + 0x3A0) + 0x3C0;
             FVector Start = {};
@@ -283,8 +283,7 @@ void ESPView(ImDrawList* draw) {
             UINT64 CurrentVehicle = GetPtr(Target + 0xA80);
             if (CurrentVehicle) {
                 driver->ReadVM(GameLoop, (PVOID)(CurrentVehicle + 0x80), &Movement, 12);
-            }
-            else {
+            } else {
                 driver->ReadVM(GameLoop, (PVOID)(GetPtr(Target + 0x158) + 0x200), &Movement, 12);
             }
 
@@ -298,9 +297,9 @@ void ESPView(ImDrawList* draw) {
             TargetPos.Z = TargetPos.Z + (TimeToTraval * Movement.Z);
 
             FRotator rot = ToRotator(Start, TargetPos);
-            UINT64 CameraFRotstor = GetPtr(GetPtr(GetPtr(libbase + 0x410E20) + 0x20) + 0x3A0) + 0x3D8;
+            UINT64 ControlRotation = GetPtr(GetPtr(libbase + 0x410E20) + 0x20) + 0x358;
             if (GetBool(MySelf + 0x1104)) {
-                driver->WriteVM(GameLoop, (PVOID)CameraFRotstor, &rot, 12);
+                driver->WriteVM(GameLoop, (PVOID)ControlRotation, &rot, 12);
             }
         }
     }
@@ -320,20 +319,6 @@ void MemoryHacK() {
 void BYPASS() {
     int NOP = -509607936;
     int RET = -509546482;
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BD0), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BD4), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BDC), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BE0), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BE4), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BE8), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BEC), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BF0), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BF4), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BF8), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376BFC), &NOP, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376C00), &RET, 4);
-    driver->WriteVM(GameLoop, (PVOID)(UnrealEngine + 0x2376C04), &NOP, 4);
-
     short int Bypass = 0xE032;
     driver->WriteVM(GameLoop, (PVOID)(GetAnogsHeader() + 0xC9DD6), &Bypass, 2);
 }
@@ -458,11 +443,11 @@ int main(int argc, const char** argv) {
                     ImGui::Checkbox("Distance", &Config.X.Distance);
                     ImGui::Checkbox("Health", &Config.X.Health);
                     ImGui::Checkbox("Ignore Bots", &Config.X.IgnoreBots);
-            } if (ImGui::CollapsingHeader("子追")) {
-                ImGui::Text("子追");
-                ImGui::Checkbox("启用", &Config.BT.Enable);
-                ImGui::SliderFloat("子追范围", &Config.BT.FovSize, 0.0f, 300.0f, "%.f");
-                ImGui::Combo("子追部位", &Config.BT.AimPos, "头\0胸\0腰\0");
+            } if (ImGui::CollapsingHeader("自瞄")) {
+                ImGui::Text("自瞄");
+                ImGui::Checkbox("启用", &Config.Aim.Enable);
+                ImGui::SliderFloat("自瞄范围", &Config.Aim.FovSize, 0.0f, 300.0f, "%.f");
+                ImGui::Combo("自瞄部位", &Config.Aim.AimPos, "头\0胸\0腰\0");
             } if (ImGui::CollapsingHeader("内存")) {
                 ImGui::Text("MEMORY HACK");
                 ImGui::Checkbox("聚点", &Config.MEM.聚点);
